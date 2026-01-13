@@ -14,7 +14,7 @@ flowchart TD
         
         order_book[**Order book**<br/>• Maintains bids/asks<br/>• Applies updates]
         
-        market_simulator[**Market simulator**<br/>• Mimics trading events<br/g]
+        market_simulator[**Market simulator**<br/>• Mimics trading events<br/>• Replaces or removes existing price levels<br/>• Adds new levels to the order book]
 
         grpc_service[**gRPC service**<br/>• Subscription mechanism<br/>• Disseminates snapshots/updates to subscribers]
     end
