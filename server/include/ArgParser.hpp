@@ -1,0 +1,23 @@
+#ifndef ARGPARSER_HPP_
+#define ARGPARSER_HPP_
+
+#include <string>
+#include <iostream>
+#include "cxxopts.hpp"
+
+#define MAX_ARGS 2
+
+class ArgParser
+{
+public:
+    explicit ArgParser(const int ac, const char *const *av);
+    void parseArgs();
+    bool checkHelp();
+    std::string filename;
+
+private:
+    cxxopts::Options _options;
+    cxxopts::ParseResult _parsedArgs;
+};
+
+#endif /* !ARGPARSER_HPP_ */

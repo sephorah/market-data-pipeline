@@ -8,7 +8,7 @@ project(
 
 find_package(cxxopts REQUIRED)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/ArgParser.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)

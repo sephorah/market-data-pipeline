@@ -157,5 +157,5 @@ cd market-data-simulator
 
 Open a terminal and run the server.
 ```sh
-./MarketDataSimulatorServer
+./MarketDataSimulatorServer -f config/simple-example.json
 ```
