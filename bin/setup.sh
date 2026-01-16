@@ -1,18 +1,28 @@
 #!/usr/bin/env bash
 
+install() {
+    echo "Installing packages..."
+    conan install . --build=missing
+    cmake --preset conan-release
+}
+
 build() {
     echo "Building Market Data Dissemination Simulator with CMake..."
-    cmake -S . -B build/
-    make -C build/
+    cmake --build --preset conan-release
+    make -C build/Release
 }
 
 clean() {
-    echo "Clearing Market Data Dissemination Simulator"
-    cmake --build build --target clean
+    echo "Cleaning Market Data Dissemination Simulator..."
+    cmake --build --target clean --preset conan-release
     rm -f MarketDataSimulatorServer
+    echo "Done."
 }
 
 case "$1" in
+    install)
+        install
+        ;;
     build)
         build
         ;;
@@ -20,7 +30,7 @@ case "$1" in
         clean
         ;;
     *)
-        echo "Usage: $0 {build|clean}"
+        echo "Usage: $0 {install|build|clean}"
         exit 1
         ;;
 esac

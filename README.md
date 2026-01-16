@@ -111,6 +111,51 @@ sequenceDiagram
     Note left of python_client: Clear cached state<br/>⇒ order books cleared
 ```
 
+## Stack used
+
+- Build system: [CMake](https://cmake.org/), a cross-platform build system generator.
+- Package manager: [Conan](https://conan.io/), a C/C++ dependency manager widely used in production environments.
+
+### Librairies
+
+- [cxxopts](https://github.com/jarro2783/cxxopts): a lightweight C++ command line option parser.
+
+
 ## Getting started
 
+### Requirements
 
+The project requires the following to run:
+
+- [CMake](https://cmake.org/): if not installed, refer to the [installation guide](https://cmake.org/download/).
+- [Conan](https://conan.io/): if not installed, refer to the [installtion guide](https://docs.conan.io/2/installation.html).
+
+Before you begin, run the following command:
+```sh
+conan profile detect --force
+```
+
+### Installation
+
+1. Clone the git repository.
+```sh
+git clone git@github.com:sephorah/market-data-simulator.git
+cd market-data-simulator
+```
+
+2. Install dependencies.
+```sh
+./bin/setup.sh install
+```
+
+3. Build the project.
+```sh
+./bin/setup.sh build
+```
+
+4. Run the project.
+
+Open a terminal and run the server.
+```sh
+./MarketDataSimulatorServer
+```

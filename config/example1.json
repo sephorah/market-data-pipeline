@@ -1,0 +1,19 @@
+{
+  "port": 14000,
+  "instruments": [
+    {
+      "id": 1,
+      "symbol": "NVDA",
+      "specifications": {
+        "depth": 10
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "AAPL",
+      "specifications": {
+        "depth": 5
+      }
+    }
+  ]
+}
