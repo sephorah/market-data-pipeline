@@ -1,5 +1,7 @@
 {
   "port": 8080,
+  "replay_speed": 1.0,
+  "nasdaq_historical_file_path": "",
   "instruments": [
     {
       "id": 1,

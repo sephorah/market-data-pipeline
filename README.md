@@ -1,26 +1,29 @@
-# Market Data Dissemination Simulator
+# Market Data Dissemination Pipeline
 
-This project is a market data dissemination simulator that consists of a C++ server and a Python client.
+This project is a market data dissemination pipeline that consists of a C++ server and a Python client.
 
 ## Architecture diagram
 
 ```mermaid
 flowchart TD
 
-    config_file["**Configuration file** with instruments details (ID, symbol, order book depth...)"]
+    config_file["**Configuration file** with instruments details (ID, symbol, order book depth)"]
+    
+    nasdaq_itch_file[**Nasdaq-ITCH 5.0 historical file**<br/>• Replayed as a continuous event stream, providing level 3 market data]
 
     subgraph cpp_server[**C++ server**]
-        order_book_manager[**Order book manager**<br/>• Creates an order book for each instrument loaded from the configuration file<br/>• Manages order books<br/>• Generates both snapshots and incremental updates <br/>]
+
+        feed_handler["**Feed handler**<br/>• Receives and processes market data into standardized formats for consumption by the Order book manager"]
+
+        order_book_manager[**Order book manager**<br/>• Reconstructs continously order books for all instruments<br/>• Manages order books<br/>• Generates both snapshots and incremental updates <br/>]
         
-        order_book[**Order book**<br/>• Maintains bids/asks<br/>• Applies updates]
-        
-        market_simulator[**Market simulator**<br/>• Mimics trading events<br/>• Replaces or removes existing price levels<br/>• Adds new levels to the order book]
+        order_book[**Order book**<br/>• Lists bids and asks for an instrument, i.e. level 2 market data]
 
         grpc_service[**gRPC service**<br/>• Subscription mechanism<br/>• Disseminates snapshots/updates to subscribers]
     end
 
     subgraph python_client[**Python client**]
-        grpc_client[**gRPC Client**<br/>• Subscribes to instruments<br/>• Receives initial snapshot and incremental updates]
+        grpc_client[**gRPC Client**<br/>• Subscribes to instruments<br/>• Receives initial snapshot and incremental updates<br/>• Asks for a new snapshot if out of sync]
 
         order_book_state_manager[**Order book state manager**<br/>• Reconstructs order book current state from incremental updates<br/>• Maintains current state in memory every tick]
 
@@ -34,11 +37,12 @@ flowchart TD
     pandas_analysis[**Pandas analysis**<br/>• Jupyter notebooks<br/>• Loads Parquet files for statistical analysis and visualizations]
 
 
-    config_file --> order_book_manager
+    config_file -->|Specifies instruments to observe| order_book_manager
     grpc_service <-->|gRPC bidirectional streaming| grpc_client
     order_book_manager --> order_book
     order_book_manager --> grpc_service
-    market_simulator --> order_book
+    nasdaq_itch_file --> feed_handler
+    feed_handler --> order_book_manager
     grpc_client --> order_book_state_manager
     order_book_state_manager --> tick_buffers
     tick_buffers --> polars_processing
@@ -53,23 +57,25 @@ Given this configuration file:
 
 ```
 {
-    "port": 14000,
-    "instruments": [
-        {
-            "id": 1,
-            "symbol": "NVDA",
-            "specifications": {
-                "depth": 10
-            }
-        },
-        {
-            "id": 2,
-            "symbol": "AAPL",
-            "specifications": {
-                "depth": 5
-            }
-        }
-    ]
+  "port": 8080,
+  "replay_speed": 1.0,
+  "nasdaq_historical_file_path": "",
+  "instruments": [
+    {
+      "id": 1,
+      "symbol": "NVDA",
+      "specifications": {
+        "depth": 10
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "AAPL",
+      "specifications": {
+        "depth": 5
+      }
+    }
+  ]
 }
 ```
 
@@ -98,10 +104,11 @@ sequenceDiagram
     
     Note left of python_client: Every 1000 ticks per instrument<br/>⇒ processed by Polars pipeline
     
-    Note over python_client,cpp_server: TIME Y: Random new snapshot
+    Note over python_client,cpp_server: TIME Y: Client not synced with server
     
-    Note right of cpp_server: Generate new<br/>snapshot randomly
-    cpp_server->>python_client: [New snapshot]
+    python_client->>cpp_server: RequestSnapshot(instrument_id=1)
+    Note right of cpp_server: Generate current state snapshot<br/>of NVDA
+    cpp_server->>python_client: [New snapshot for NVDA]
     Note left of python_client: Clear old state<br/>⇒ Apply new snapshot
     
     Note over python_client,cpp_server: TIME Z: Unsubscribe
@@ -130,10 +137,16 @@ The project requires the following to run:
 - [CMake](https://cmake.org/): if not installed, refer to the [installation guide](https://cmake.org/download/).
 - [Conan](https://conan.io/): if not installed, refer to the [installtion guide](https://docs.conan.io/2/installation.html).
 
-Before you begin, run the following command:
+Run the following command:
 ```sh
 conan profile detect --force
 ```
+
+### Dataset
+
+Download raw ITCH 5.0 data `01302020.NASDAQ_ITCH50.gz` from `https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/`.
+
+The data format is defined by the document [Nasdaq TotalView-ITCH 5.0](https://www.nasdaqtrader.com/content/technicalsupport/specifications/dataproducts/NQTVITCHspecification.pdf).
 
 ### Installation
 
@@ -157,5 +170,5 @@ cd market-data-simulator
 
 Open a terminal and run the server.
 ```sh
-./MarketDataSimulatorServer -f config/simple-example.json
+./MarketDataSimulatorServer -f examples/simple-example.json
 ```
