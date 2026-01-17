@@ -1,6 +1,6 @@
-# Market Data Dissemination Pipeline
+# Market Data Distribution Pipeline
 
-This project is a market data dissemination pipeline that consists of a C++ server and a Python client.
+This project is a market data distribution pipeline that consists of a C++ server and a Python client.
 
 ## Architecture diagram
 
@@ -13,23 +13,23 @@ flowchart TD
 
     subgraph cpp_server[**C++ server**]
 
-        feed_handler["**Feed handler**<br/>• Receives and processes market data into standardized formats for consumption by the Order book manager"]
+        feed_handler["**Feed handler**<br/>• Decodes ITCH messages and emits normalized order events"]
 
-        order_book_manager[**Order book manager**<br/>• Reconstructs continously order books for all instruments<br/>• Manages order books<br/>• Generates both snapshots and incremental updates <br/>]
+        order_book_manager[**Order book manager**<br/>• Applies events to maintain order books state<br/>• Produces both snapshots and incremental updates <br/>]
         
-        order_book[**Order book**<br/>• Lists bids and asks for an instrument, i.e. level 2 market data]
+        order_book[**Order book**<br/>• Lists bids and asks for an instrument]
 
-        grpc_service[**gRPC service**<br/>• Subscription mechanism<br/>• Disseminates snapshots/updates to subscribers]
+        grpc_service[**gRPC service**<br/>• Subscription mechanism<br/>• Publishes snapshots/updates to subscribers]
     end
 
     subgraph python_client[**Python client**]
         grpc_client[**gRPC Client**<br/>• Subscribes to instruments<br/>• Receives initial snapshot and incremental updates<br/>• Asks for a new snapshot if out of sync]
 
-        order_book_state_manager[**Order book state manager**<br/>• Reconstructs order book current state from incremental updates<br/>• Maintains current state in memory every tick]
+        order_book_state_manager[**Order book state manager**<br/>• Reconstructs current order book state from incremental updates<br/>• Maintains current state in memory every update]
 
-        tick_buffers[**Tick buffers per instrument**<br/>• Maintains separate buffer per instrument<br/>• Collects ticks up to 1000 per instrument]
+        update_buffers[**Updates buffers per instrument**<br/>• Maintains separate buffer per instrument<br/>• Collects updates up to 1000 per instrument]
 
-        polars_processing[**Polars processing**<br/>• Processes each instrument independently<br/>• Triggers when instrument reaches 1000 ticks<br/>• Extracts features and saves to Parquet]
+        polars_processing[**Polars processing**<br/>• Processes each instrument independently<br/>• Triggers when instrument reaches 1000 updates<br/>• Extracts features and saves to Parquet]
     end
 
     parquet_files[**Parquet files**]
@@ -44,8 +44,8 @@ flowchart TD
     nasdaq_itch_file --> feed_handler
     feed_handler --> order_book_manager
     grpc_client --> order_book_state_manager
-    order_book_state_manager --> tick_buffers
-    tick_buffers --> polars_processing
+    order_book_state_manager --> update_buffers
+    update_buffers --> polars_processing
     polars_processing --> parquet_files
     parquet_files --> pandas_analysis
 ```
@@ -59,20 +59,22 @@ Given this configuration file:
 {
   "port": 8080,
   "replay_speed": 1.0,
-  "nasdaq_historical_file_path": "",
+  "nasdaq_historical_file_path": "filepath",
   "instruments": [
     {
       "id": 1,
       "symbol": "NVDA",
       "specifications": {
-        "depth": 10
+        "depth": 10,
+        "enabled": true
       }
     },
     {
       "id": 2,
       "symbol": "AAPL",
       "specifications": {
-        "depth": 5
+        "depth": 5,
+        "enabled": true
       }
     }
   ]
@@ -88,26 +90,26 @@ sequenceDiagram
     Note over python_client,cpp_server: TIME 0: Client subscribes
     
     python_client->>cpp_server: Subscribe(instrument_ids=[1, 2])
-    Note right of cpp_server: Generate initial snapshots<br/>of NVDA and AAPL
+    Note right of cpp_server: Produces and publishes<br/>initial snapshots<br/>of NVDA and AAPL
     cpp_server->>python_client: [Initial snapshot of NVDA]<br/>Bids: [150.20@200, ...]<br/>Asks: [150.25@150, ...]
     cpp_server->>python_client: [Initial snapshot of AAPL]<br/>Bids: [140.30@100, ...]<br/>Asks: [141.50@120, ...]
 
     Note over python_client,cpp_server: ONGOING: Continuous Updates
     
-    Note right of cpp_server: Market ticks:<br/>• NVDA: New bid 150.22@100<br/>• AAPL: Remove ask 141.50@120
+    Note right of cpp_server: Order events:<br/>• NVDA: New bid 150.22@100<br/>• AAPL: Remove ask 141.50@120
     cpp_server->>python_client: [Batched update]<br/>NVDA: Add bid 150.22@100<br/>AAPL: Remove ask 141.50@120
     Note left of python_client: Apply updates<br/>⇒ Update order books state
     
-    Note right of cpp_server: Market tick:<br/>• NVDA: Replace ask 150<br/>quantity to 120
+    Note right of cpp_server: Order event:<br/>• NVDA: Replace ask 150<br/>quantity to 120
     cpp_server->>python_client: [Update] <br/>NVDA: Replace ask 150<br/>quantity to 120
     Note left of python_client: Apply update<br/>⇒ Update NVDA order book state
     
-    Note left of python_client: Every 1000 ticks per instrument<br/>⇒ processed by Polars pipeline
+    Note left of python_client: Every 1000 updates per instrument<br/>⇒ processed by Polars pipeline
     
     Note over python_client,cpp_server: TIME Y: Client not synced with server
     
     python_client->>cpp_server: RequestSnapshot(instrument_id=1)
-    Note right of cpp_server: Generate current state snapshot<br/>of NVDA
+    Note right of cpp_server: Produces and publishes<br/>current state snapshot<br/>of NVDA
     cpp_server->>python_client: [New snapshot for NVDA]
     Note left of python_client: Clear old state<br/>⇒ Apply new snapshot
     

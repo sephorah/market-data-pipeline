@@ -1,20 +1,22 @@
 {
   "port": 8080,
   "replay_speed": 1.0,
-  "nasdaq_historical_file_path": "",
+  "nasdaq_historical_file_path": "filepath",
   "instruments": [
     {
       "id": 1,
       "symbol": "NVDA",
       "specifications": {
-        "depth": 10
+        "depth": 10,
+        "enabled": true
       }
     },
     {
       "id": 2,
       "symbol": "AAPL",
       "specifications": {
-        "depth": 5
+        "depth": 5,
+        "enabled": true
       }
     }
   ]
