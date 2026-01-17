@@ -15,7 +15,7 @@ flowchart TD
 
         feed_handler["**Feed handler**<br/>• Decodes ITCH messages and emits normalized order events"]
 
-        order_book_manager[**Order book manager**<br/>• Applies events to maintain order books state<br/>• Produces both snapshots and incremental updates <br/>]
+        order_book_manager[**Order book manager**<br/>• Applies events to maintain order book state<br/>• Produces both snapshots and incremental updates <br/>]
         
         order_book[**Order book**<br/>• Lists bids and asks for an instrument]
 
@@ -25,7 +25,7 @@ flowchart TD
     subgraph python_client[**Python client**]
         grpc_client[**gRPC Client**<br/>• Subscribes to instruments<br/>• Receives initial snapshot and incremental updates<br/>• Asks for a new snapshot if out of sync]
 
-        order_book_state_manager[**Order book state manager**<br/>• Reconstructs current order book state from incremental updates<br/>• Maintains current state in memory every update]
+        order_book_state_manager[**Order book state manager**<br/>• Reconstructs current order book state from incremental updates<br/>• Maintains current state in memory on each update]
 
         update_buffers[**Update buffers per instrument**<br/>• Maintains separate buffer per instrument<br/>• Collects updates up to 1000 per instrument]
 
