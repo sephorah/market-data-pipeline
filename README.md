@@ -9,7 +9,7 @@ flowchart TD
 
     config_file["**Configuration file** with instruments details (ID, symbol, order book depth)"]
     
-    nasdaq_itch_file[**Nasdaq-ITCH 5.0 historical file**<br/>• Replayed as a continuous event stream, providing level 3 market data]
+    nasdaq_itch_file[**NASDAQ TotalView-ITCH 5.0 historical file**<br/>• Replayed as a continuous event stream, providing level 3 market data]
 
     subgraph cpp_server[**C++ server**]
 
@@ -27,7 +27,7 @@ flowchart TD
 
         order_book_state_manager[**Order book state manager**<br/>• Reconstructs current order book state from incremental updates<br/>• Maintains current state in memory every update]
 
-        update_buffers[**Updates buffers per instrument**<br/>• Maintains separate buffer per instrument<br/>• Collects updates up to 1000 per instrument]
+        update_buffers[**Update buffers per instrument**<br/>• Maintains separate buffer per instrument<br/>• Collects updates up to 1000 per instrument]
 
         polars_processing[**Polars processing**<br/>• Processes each instrument independently<br/>• Triggers when instrument reaches 1000 updates<br/>• Extracts features and saves to Parquet]
     end
@@ -97,7 +97,7 @@ sequenceDiagram
     Note over python_client,cpp_server: ONGOING: Continuous Updates
     
     Note right of cpp_server: Order events:<br/>• NVDA: New bid 150.22@100<br/>• AAPL: Remove ask 141.50@120
-    cpp_server->>python_client: [Batched update]<br/>NVDA: Add bid 150.22@100<br/>AAPL: Remove ask 141.50@120
+    cpp_server->>python_client: [Update]<br/>NVDA: Add bid 150.22@100<br/>AAPL: Remove ask 141.50@120
     Note left of python_client: Apply updates<br/>⇒ Update order books state
     
     Note right of cpp_server: Order event:<br/>• NVDA: Replace ask 150<br/>quantity to 120
