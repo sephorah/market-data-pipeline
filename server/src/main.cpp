@@ -1,18 +1,29 @@
 #include "Server.hpp"
 #include "ArgParser.hpp"
+#include "ConfigParser.hpp"
 
 int main(const int ac, const char *const *av)
 {
     try
     {
-        ArgParser parser(ac, av);
+        ArgParser argsParser(ac, av);
 
-        if (parser.checkHelp())
+        if (argsParser.checkHelp())
         {
             return EXIT_SUCCESS;
         }
-        parser.parseArgs();
-        std::cout << "Filename : " << parser.filename << std::endl;
+        ParsedArgs args = argsParser.parseArgs();
+        std::cout << "Filename : " << args.filename << std::endl;
+        ConfigParser configParser(args.filename);
+        Config config = configParser.parseConfig();
+        std::cout << "CONFIG" << std::endl;
+        std::cout << config.port << std::endl
+                  << config.replaySpeed << std::endl
+                  << config.nasdaqHistoricalFilePath << std::endl;
+        for (const auto &[key, value] : config.instruments)
+        {
+            std::cout << key << " " << value.symbol << " " << value.specs.depth << " " << value.specs.enabled << " " << std::endl;
+        }
     }
     catch (const std::exception &e)
     {

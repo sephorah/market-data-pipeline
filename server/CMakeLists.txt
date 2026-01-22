@@ -7,9 +7,12 @@ project(
 )
 
 find_package(cxxopts REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
-add_executable(${PROJECT_NAME} src/main.cpp src/ArgParser.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/ArgParser.cpp src/ConfigParser.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
-target_link_libraries(${PROJECT_NAME} cxxopts::cxxopts)
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE cxxopts::cxxopts
+    PRIVATE nlohmann_json::nlohmann_json)

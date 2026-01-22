@@ -18,14 +18,17 @@ bool ArgParser::checkHelp()
     return false;
 }
 
-void ArgParser::parseArgs()
+ParsedArgs ArgParser::parseArgs()
 {
+    ParsedArgs args;
+
     if (_parsedArgs.count("filename"))
     {
-        this->filename = _parsedArgs["filename"].as<std::string>();
+        args.filename = _parsedArgs["filename"].as<std::string>();
     }
     else
     {
         throw std::runtime_error("Filename is required.");
     }
+    return args;
 }
